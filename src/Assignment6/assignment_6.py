@@ -29,18 +29,33 @@ def build_model(cnn=True):
         # Input is multidimensional, flattened to single dimension
         model.add(keras.layers.Flatten())
         # Add a hidden layer - units is number of neurons/layer width
+        model.add(keras.layers.Dense(units=128, activation="relu"))
+
+        model.add(keras.layers.Dense(units=64, activation="relu"))
+
         model.add(keras.layers.Dense(units=16, activation="relu"))
         # TODO add more dense layers and/or vary number of units for increased complexity of FNN
+        # I tried a few different combinations and found that adding more than 3 hidden layers did lead to significant improvements.
 
     else:
 
         ###  Convolutional neural network  ###
 
         # Add convolutional layer - filters is depth of layer output and kernel_size the convolution window
-        model.add(keras.layers.Conv2D(filters=8, kernel_size=(2, 2), activation="relu", padding="same"))
+        model.add(keras.layers.Conv2D(filters=16, kernel_size=(3, 3), activation="relu", padding="same"))
+        model.add(keras.layers.Conv2D(filters=32, kernel_size=(3, 3), activation="relu", padding="same"))
+
         # Add pooling layer to downscale (MaxPooling downscales by returning the maximum value in each input window)
         model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
         # TODO add more layers and/or experiment with different number of filters, different kernel_size or pool_size
+
+        model.add(keras.layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding="same"))
+        #model.add(keras.layers.Conv2D(filters=64, kernel_size=(3, 3), activation="relu", padding="same"))
+
+        model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
+
+
+
 
         # Flatten internal dimensions before output - additional dense layers could also be included after this line
         model.add(keras.layers.Flatten())
@@ -56,22 +71,28 @@ def build_model(cnn=True):
 if __name__ == "__main__":
 
     # TODO try different values for epochs and learning_rate to improve model performance
-    epochs = 1
-    learning_rate = 1.0
+    # Toyed around a bit and think the sweet spot is around the values below.
+
+    # For MLP: epochs = 6, learning_rate = 0.23
+    # For CNN: epochs = 5, learning_rate = 0.001
+
+    epochs = 5
+    learning_rate = 0.001
 
     x_train, y_train, x_test, y_test = load_mnist()
-    model = build_model(cnn=False)  # set cnn=True for convolutional network, false for MLP
+    model = build_model(cnn=True)  # set cnn=True for convolutional network, false for MLP
 
     # Compile model - Stochastic gradient descent is chosen for the optimizer and categorical cross entropy for the
     # loss calculation
-    optimizer = keras.optimizers.SGD(learning_rate=learning_rate)
+    #optimizer = keras.optimizers.SGD(learning_rate=learning_rate)
+    optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
     model.compile(optimizer=optimizer, loss="categorical_crossentropy", metrics=['accuracy'])
 
     # Show model architecture details and compare parameter counts
     model.summary()
 
     # Train the model on training data
-    history = model.fit(x_train, y_train, epochs=epochs, batch_size=128, verbose=1, validation_split=0.1)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=64, verbose=1, validation_split=0.1)
 
     # Evaluate the model on test data
     test_loss, test_acc = model.evaluate(x_test, y_test, verbose=1)
